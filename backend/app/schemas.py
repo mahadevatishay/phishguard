@@ -26,7 +26,8 @@ class AdminOut(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
-    class Config: from_attributes = True
+    class Config:
+        orm_mode = True
 
 # User
 class UserCreate(BaseModel):
@@ -46,7 +47,8 @@ class UserOut(BaseModel):
     is_active: bool
     risk_score: float
     created_at: datetime
-    class Config: from_attributes = True
+    class Config:
+        orm_mode = True
 
 # Template
 class TemplateCreate(BaseModel):
@@ -71,7 +73,8 @@ class TemplateOut(BaseModel):
     difficulty: str
     is_active: bool
     created_at: datetime
-    class Config: from_attributes = True
+    class Config:
+        orm_mode = True
 
 # Campaign
 class CampaignCreate(BaseModel):
@@ -96,7 +99,8 @@ class CampaignOut(BaseModel):
     launch_date: Optional[datetime]
     end_date: Optional[datetime]
     created_at: datetime
-    class Config: from_attributes = True
+    class Config:
+        orm_mode = True
 
 # Settings
 class SettingUpdate(BaseModel):
