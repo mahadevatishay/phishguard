@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (email, password) => {
-    const res = await axios.post('/api/auth/login', { email, password })
+    const res = await axios.post('https://phishguard-backend-d861.onrender.com/api/auth/login', { email, password })
     const { access_token, admin: adminData } = res.data
     localStorage.setItem('pg_token', access_token)
     localStorage.setItem('pg_admin', JSON.stringify(adminData))
