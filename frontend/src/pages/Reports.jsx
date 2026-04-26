@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react'
 import api from '../utils/api'
 import PageHeader from '../components/PageHeader'
 import StatusBadge from '../components/StatusBadge'
-import { FileText, Download, Filter } from 'lucide-react'
+import { FileText, Download, Filter, FileDown, Loader2 } from 'lucide-react'
 
 export default function Reports() {
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('all')
+  const [pdfLoading, setPdfLoading] = useState(null)
 
-  useEffect(() => { api.get('/api/reports/summary').then(r => { setReports(r.data); setLoading(false) }) }, [])
+  useEffect(() => {
+    api.get('/api/reports/summary').then(r => { setReports(r.data); setLoading(false) })
+  }, [])
 
   const exportCSV = async (campaignId = null) => {
     const url = `/api/reports/export/csv${campaignId ? `?campaign_id=${campaignId}` : ''}`
@@ -18,6 +21,19 @@ export default function Reports() {
     a.href = URL.createObjectURL(r.data)
     a.download = `phishguard_report${campaignId ? `_campaign_${campaignId}` : ''}.csv`
     a.click()
+  }
+
+  const exportPDF = async (campaignId = null) => {
+    setPdfLoading(campaignId || 'all')
+    try {
+      const url = `/api/reports/export/pdf${campaignId ? `?campaign_id=${campaignId}` : ''}`
+      const r = await api.get(url, { responseType: 'blob' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }))
+      a.download = `phishguard_report${campaignId ? `_campaign_${campaignId}` : '_full'}.pdf`
+      a.click()
+    } catch (e) { alert('PDF generation failed') }
+    setPdfLoading(null)
   }
 
   const filtered = filterStatus === 'all' ? reports : reports.filter(r => r.status === filterStatus)
@@ -31,22 +47,30 @@ export default function Reports() {
     <div className="space-y-5">
       <PageHeader title="Reports & Export" description="Campaign performance reports and data export"
         actions={
-          <button onClick={() => exportCSV()} className="btn-primary">
-            <Download className="w-4 h-4" />Export All CSV
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => exportCSV()} className="btn-secondary">
+              <Download className="w-4 h-4" />Export All CSV
+            </button>
+            <button onClick={() => exportPDF()} disabled={pdfLoading === 'all'}
+              className="btn-primary">
+              {pdfLoading === 'all'
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Generating...</>
+                : <><FileDown className="w-4 h-4" />Export Full PDF</>}
+            </button>
+          </div>
         }
       />
 
       {/* Summary boxes */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total Campaigns', value: reports.length },
-          { label: 'Total Sent', value: totals.sent.toLocaleString() },
-          { label: 'Total Clicked', value: totals.clicked },
-          { label: 'Total Reported', value: totals.reported },
-        ].map(({ label, value }) => (
+          { label: 'Total Campaigns', value: reports.length, color: 'text-cyan-400' },
+          { label: 'Total Sent', value: totals.sent.toLocaleString(), color: 'text-blue-400' },
+          { label: 'Total Clicked', value: totals.clicked, color: 'text-red-400' },
+          { label: 'Total Reported', value: totals.reported, color: 'text-emerald-400' },
+        ].map(({ label, value, color }) => (
           <div key={label} className="card text-center">
-            <p className="text-2xl font-bold font-mono text-gray-200">{value}</p>
+            <p className={`text-2xl font-bold font-mono ${color}`}>{value}</p>
             <p className="text-xs text-gray-500 mt-0.5">{label}</p>
           </div>
         ))}
@@ -63,7 +87,7 @@ export default function Reports() {
         ))}
       </div>
 
-      {/* Reports table */}
+      {/* Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -79,12 +103,12 @@ export default function Reports() {
                 <th className="table-header text-right">Reported</th>
                 <th className="table-header text-right">Report%</th>
                 <th className="table-header">Launch Date</th>
-                <th className="table-header"></th>
+                <th className="table-header text-center">Export</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={11} className="table-cell text-center py-12 text-gray-600">Loading reports...</td></tr>
+                <tr><td colSpan={11} className="table-cell text-center py-12 text-gray-600">Loading...</td></tr>
               ) : filtered.map(r => (
                 <tr key={r.id} className="table-row">
                   <td className="table-cell">
@@ -106,9 +130,18 @@ export default function Reports() {
                     <span className="text-xs text-gray-500">{r.launch_date ? new Date(r.launch_date).toLocaleDateString() : '—'}</span>
                   </td>
                   <td className="table-cell">
-                    <button onClick={() => exportCSV(r.id)} className="p-1.5 text-gray-600 hover:text-cyan-400 transition-colors" title="Export CSV">
-                      <Download className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center justify-center gap-1">
+                      <button onClick={() => exportCSV(r.id)}
+                        className="p-1.5 text-gray-600 hover:text-cyan-400 transition-colors" title="Export CSV">
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => exportPDF(r.id)} disabled={pdfLoading === r.id}
+                        className="p-1.5 text-gray-600 hover:text-red-400 transition-colors" title="Export PDF">
+                        {pdfLoading === r.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+                          : <FileDown className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

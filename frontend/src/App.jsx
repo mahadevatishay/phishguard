@@ -9,6 +9,7 @@ import CampaignBuilder from './pages/CampaignBuilder'
 import Users from './pages/Users'
 import Templates from './pages/Templates'
 import Analytics from './pages/Analytics'
+import DepartmentAnalytics from './pages/DepartmentAnalytics'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
 import Training from './pages/Training'
@@ -42,6 +43,7 @@ function AppRoutes() {
         <Route path="users" element={<Users />} />
         <Route path="templates" element={<Templates />} />
         <Route path="analytics" element={<Analytics />} />
+        <Route path="departments" element={<DepartmentAnalytics />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
       </Route>
